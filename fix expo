@@ -1,0 +1,43 @@
+$env:REACT_NATIVE_PACKAGER_HOSTNAME="192.168.219.72"
+ npx expo start --lan --clear 
+
+ cd tea-driver
+npm i firebase
+npx expo install @react-native-async-storage/async-storage
+npx expo install expo-location
+
+cd ../tea-user
+npm i firebase
+npx expo install @react-native-async-storage/async-storage
+
+cd ../tea-admin
+npm i firebase
+npx expo install @react-native-async-storage/async-storage
+
+
+these are the uids
+tea-user: nW9LYlKr6ORS7DSutHSvvzlcP2I3
+tea-driver: mUG8Gxr0iZVuKJ8FxuLBx8Ejiqy2
+tea-admin: i4rlxYzPhsdCQ8a9CKTNTDp4iKm1
+
+admin:  username: admin@gmail.com
+        password: admin123
+        
+in campus wifi ip clear:
+$env:REACT_NATIVE_PACKAGER_HOSTNAME="172.16.24.124"
+npx expo start --lan --clear
+
+
+for update all dependancies:
+npx expo install expo@~54.0.33 expo-router@~6.0.23
+npx expo install @expo/metro-runtime
+npx expo-doctor
+npm audit fix
+
+firebase consol acc hes001@
+
+
+build apk for android
+eas login
+eas build:configure (eas.json eka hariyata hadaganna)
+eas build -p android --profile preview
