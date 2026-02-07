@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "Tea Owners",
+    "slug": "tea-user",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon-user.png",
+    "scheme": "teauser",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "icon": "./assets/icon-user.png",
+      "bundleIdentifier": "com.heshan.teaowners"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon-user.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.heshan.teaowners",
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ad3281d9-3f44-4b53-9f26-247ba483cc62"
+      }
+    }
+  }
+}

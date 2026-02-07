@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "Tea Driver",
+    "slug": "tea-driver",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon-driver.png",
+    "scheme": "teadriver",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "icon": "./assets/icon-driver.png",
+      "bundleIdentifier": "com.heshan.teadriver"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon-driver.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.heshan.teadriver",
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b3ccccbb-a2fe-4d7a-9299-3d9110306d8e"
+      }
+    }
+  }
+}
