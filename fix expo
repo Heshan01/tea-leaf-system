@@ -41,3 +41,7 @@ build apk for android
 eas login
 eas build:configure (eas.json eka hariyata hadaganna)
 eas build -p android --profile preview
+
+git add .
+git commit -m "Add full source code for admin, driver, owners apps"
+git push
