@@ -18,7 +18,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import LiveMap from "../../components/LiveMap";
+import MiniMapOSM from "../../components/MiniMapOSM";
 import { COLORS, SHADOWS, SIZES } from "../../constants/Theme";
 import { auth, db, rtdb } from "../../lib/firebase";
 
@@ -293,10 +293,31 @@ export default function Home() {
   const onlineLabel = presenceOk ? "Online (Presence)" : "Offline";
   const shareLabel = sharing ? "LIVE Now" : "Not Sharing";
 
+  if (!uid) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: P }}>
+          <Text style={{ fontSize: 16, fontWeight: "800", color: COLORS.text }}>Not logged in</Text>
+          <Text style={{ marginTop: 6, color: COLORS.textLight, textAlign: "center" }}>
+            Please login again.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={{ padding: P, paddingBottom: 26, gap: 16 }}>
+          {/* Loading Profile */}
+          {loadingProfile && (
+            <View style={{ paddingVertical: 10, alignItems: "center", gap: 8 }}>
+              <ActivityIndicator />
+              <Text style={{ color: COLORS.textLight }}>Loading profile…</Text>
+            </View>
+          )}
+
           {/* Header Dashboard Card */}
           <View
             style={{
@@ -307,7 +328,14 @@ export default function Home() {
             }}
           >
             {/* Top Row: Title + Icon */}
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginBottom: 16,
+              }}
+            >
               <View>
                 <Text style={{ fontSize: SIZES.h2, fontWeight: "800", color: COLORS.text }}>
                   Driver Dashboard
@@ -316,12 +344,16 @@ export default function Home() {
                   Tea Leaf System • Route {routeId ?? "--"}
                 </Text>
               </View>
-              <View style={{
-                width: 40, height: 40,
-                borderRadius: 12,
-                backgroundColor: COLORS.primarySoft,
-                alignItems: "center", justifyContent: "center"
-              }}>
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  backgroundColor: COLORS.primarySoft,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
                 <Ionicons name="leaf" size={24} color={COLORS.primary} />
               </View>
             </View>
@@ -339,17 +371,18 @@ export default function Home() {
                   justifyContent: "center",
                   gap: 8,
                   opacity: pressed ? 0.9 : 1,
-
                 })}
               >
                 <Ionicons name="navigate-circle" size={24} color="white" />
-                <Text style={{ color: "white", fontWeight: "700", fontSize: 16 }}>GO ONLINE (Start Sharing)</Text>
+                <Text style={{ color: "white", fontWeight: "700", fontSize: 16 }}>
+                  GO ONLINE (Start Sharing)
+                </Text>
               </Pressable>
             ) : (
               <Pressable
                 onPress={stopSharing}
                 style={({ pressed }) => ({
-                  backgroundColor: COLORS.text, // Dark button for stop
+                  backgroundColor: COLORS.text,
                   paddingVertical: 16,
                   borderRadius: 12,
                   alignItems: "center",
@@ -366,15 +399,48 @@ export default function Home() {
 
             {/* Stats Row */}
             <View style={{ flexDirection: "row", marginTop: 20, gap: 12 }}>
-              <View style={{ flex: 1, backgroundColor: COLORS.background, padding: 12, borderRadius: 12, alignItems: "center" }}>
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: COLORS.background,
+                  padding: 12,
+                  borderRadius: 12,
+                  alignItems: "center",
+                }}
+              >
                 <Ionicons name="radio" size={20} color={sharing ? COLORS.primary : COLORS.textLight} />
                 <Text style={{ fontSize: 12, color: COLORS.textLight, marginTop: 4 }}>Status</Text>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: sharing ? COLORS.primary : COLORS.text }}>{shareLabel}</Text>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: sharing ? COLORS.primary : COLORS.text,
+                  }}
+                >
+                  {shareLabel}
+                </Text>
               </View>
-              <View style={{ flex: 1, backgroundColor: COLORS.background, padding: 12, borderRadius: 12, alignItems: "center" }}>
+
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: COLORS.background,
+                  padding: 12,
+                  borderRadius: 12,
+                  alignItems: "center",
+                }}
+              >
                 <Ionicons name="wifi" size={20} color={presenceOk ? COLORS.primary : COLORS.error} />
                 <Text style={{ fontSize: 12, color: COLORS.textLight, marginTop: 4 }}>Connection</Text>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: presenceOk ? COLORS.primary : COLORS.text }}>{onlineLabel}</Text>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: presenceOk ? COLORS.primary : COLORS.text,
+                  }}
+                >
+                  {onlineLabel}
+                </Text>
               </View>
             </View>
           </View>
@@ -393,7 +459,8 @@ export default function Home() {
           >
             <View
               style={{
-                width: 56, height: 56,
+                width: 56,
+                height: 56,
                 borderRadius: 999,
                 backgroundColor: COLORS.primarySoft,
                 borderWidth: 2,
@@ -435,7 +502,10 @@ export default function Home() {
           </View>
 
           {/* Quick Alerts Section */}
-          <Text style={{ fontSize: 16, fontWeight: "700", color: COLORS.text, marginLeft: 4 }}>Quick Alerts</Text>
+          <Text style={{ fontSize: 16, fontWeight: "700", color: COLORS.text, marginLeft: 4 }}>
+            Quick Alerts
+          </Text>
+
           <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
             <Pressable
               onPress={() => {
@@ -452,10 +522,20 @@ export default function Home() {
                 alignItems: "center",
                 ...SHADOWS.small,
                 borderWidth: 1,
-                borderColor: COLORS.background
+                borderColor: COLORS.background,
               }}
             >
-              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.errorBg, alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: COLORS.errorBg,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 8,
+                }}
+              >
                 <Ionicons name="construct" size={20} color={COLORS.error} />
               </View>
               <Text style={{ fontWeight: "600", color: COLORS.text, fontSize: 13 }}>Breakdown</Text>
@@ -476,10 +556,20 @@ export default function Home() {
                 alignItems: "center",
                 ...SHADOWS.small,
                 borderWidth: 1,
-                borderColor: COLORS.background
+                borderColor: COLORS.background,
               }}
             >
-              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.warningBg, alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: COLORS.warningBg,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 8,
+                }}
+              >
                 <Ionicons name="time" size={20} color={COLORS.warning} />
               </View>
               <Text style={{ fontWeight: "600", color: COLORS.text, fontSize: 13 }}>Delay</Text>
@@ -500,41 +590,67 @@ export default function Home() {
                 alignItems: "center",
                 ...SHADOWS.small,
                 borderWidth: 1,
-                borderColor: COLORS.background
+                borderColor: COLORS.background,
               }}
             >
-              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: COLORS.primarySoft,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 8,
+                }}
+              >
                 <Ionicons name="chatbubble" size={20} color={COLORS.primary} />
               </View>
               <Text style={{ fontWeight: "600", color: COLORS.text, fontSize: 13 }}>Note</Text>
             </Pressable>
           </View>
 
-
-          {/* Full Live Map Card */}
-          <View style={{
-            borderRadius: SIZES.radius,
-            overflow: 'hidden',
-            ...SHADOWS.medium,
-            backgroundColor: COLORS.card,
-            marginTop: 4
-          }}>
-            <View style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ fontWeight: '700', color: COLORS.text }}>Live Location</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: sharing ? COLORS.primary : COLORS.textLight }} />
+          {/* Full Live Map Card (OSM - Free) */}
+          <View
+            style={{
+              borderRadius: SIZES.radius,
+              overflow: "hidden",
+              ...SHADOWS.medium,
+              backgroundColor: COLORS.card,
+              marginTop: 4,
+            }}
+          >
+            <View
+              style={{
+                padding: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: COLORS.border,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Text style={{ fontWeight: "700", color: COLORS.text }}>Live Location</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <View
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: sharing ? COLORS.primary : COLORS.textLight,
+                  }}
+                />
                 <Text style={{ fontSize: 12, color: COLORS.textLight }}>{sharing ? "Updating" : "Paused"}</Text>
               </View>
             </View>
-            <LiveMap
-              title={`Vehicle ${vehicleId}`}
-              lat={pos?.lat}
-              lng={pos?.lng}
+
+            <MiniMapOSM
+              lat={Number(pos?.lat) || 7.8731}
+              lng={Number(pos?.lng) || 80.7718}
               height={mapH}
               follow={true}
             />
           </View>
-
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -560,7 +676,9 @@ export default function Home() {
             </View>
 
             <View>
-              <Text style={{ fontSize: 14, fontWeight: "600", color: COLORS.text, marginBottom: 6 }}>Driver Name</Text>
+              <Text style={{ fontSize: 14, fontWeight: "600", color: COLORS.text, marginBottom: 6 }}>
+                Driver Name
+              </Text>
               <TextInput
                 placeholder="Your Name"
                 value={editName}
@@ -579,7 +697,9 @@ export default function Home() {
             </View>
 
             <View>
-              <Text style={{ fontSize: 14, fontWeight: "600", color: COLORS.text, marginBottom: 6 }}>Profile Image URL</Text>
+              <Text style={{ fontSize: 14, fontWeight: "600", color: COLORS.text, marginBottom: 6 }}>
+                Profile Image URL
+              </Text>
               <TextInput
                 placeholder="https://..."
                 value={editPhoto}
@@ -635,16 +755,31 @@ export default function Home() {
           >
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <View style={{
-                  width: 40, height: 40,
-                  borderRadius: 12,
-                  backgroundColor: alertType === 'breakdown' || alertType === 'emergency' ? COLORS.errorBg : alertType === 'delay' ? COLORS.warningBg : COLORS.primarySoft,
-                  alignItems: "center", justifyContent: "center"
-                }}>
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    backgroundColor:
+                      alertType === "breakdown" || alertType === "emergency"
+                        ? COLORS.errorBg
+                        : alertType === "delay"
+                        ? COLORS.warningBg
+                        : COLORS.primarySoft,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
                   <Ionicons
-                    name={alertType === 'breakdown' ? 'construct' : alertType === 'delay' ? 'time' : 'chatbubble'}
+                    name={alertType === "breakdown" ? "construct" : alertType === "delay" ? "time" : "chatbubble"}
                     size={24}
-                    color={alertType === 'breakdown' || alertType === 'emergency' ? COLORS.error : alertType === 'delay' ? COLORS.warning : COLORS.primary}
+                    color={
+                      alertType === "breakdown" || alertType === "emergency"
+                        ? COLORS.error
+                        : alertType === "delay"
+                        ? COLORS.warning
+                        : COLORS.primary
+                    }
                   />
                 </View>
                 <View>
@@ -675,7 +810,7 @@ export default function Home() {
                 color: COLORS.text,
                 minHeight: 120,
                 textAlignVertical: "top",
-                fontSize: 16
+                fontSize: 16,
               }}
             />
 
@@ -687,7 +822,7 @@ export default function Home() {
                 padding: 16,
                 borderRadius: 14,
                 alignItems: "center",
-                marginTop: 8
+                marginTop: 8,
               }}
             >
               {sendingAlert ? (

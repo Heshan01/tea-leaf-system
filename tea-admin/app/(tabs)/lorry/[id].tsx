@@ -1,3 +1,4 @@
+// app/(tabs)/lorry/[id].tsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
   SafeAreaView,
@@ -31,7 +32,7 @@ import {
 } from "firebase/firestore";
 import { onValue, ref } from "firebase/database";
 import { db, rtdb } from "../../../lib/firebase";
-import MiniMap from "../../../components/MiniMap";
+import MiniMapOSM from "../../../components/MiniMapOSM";
 
 const THEME = {
   bg: "#F3F4F6",
@@ -41,6 +42,7 @@ const THEME = {
   border: "#E5E7EB",
   green: "#166534",
   green2: "#22C55E",
+  greenSoft: "#DCFCE7",
   red: "#DC2626",
   dark: "#111827",
 };
@@ -71,16 +73,13 @@ export default function LorryDetails() {
   const [pos, setPos] = useState<any>(null);
   const [presence, setPresence] = useState<any>(null);
 
-  // message modal
   const [msgOpen, setMsgOpen] = useState(false);
   const [msgTitle, setMsgTitle] = useState("");
   const [msgBody, setMsgBody] = useState("");
   const [sending, setSending] = useState(false);
 
-  // recent messages
   const [msgs, setMsgs] = useState<Msg[]>([]);
 
-  // Load vehicle
   useEffect(() => {
     (async () => {
       try {
@@ -96,7 +95,6 @@ export default function LorryDetails() {
     })();
   }, [vehicleId]);
 
-  // Live location
   useEffect(() => {
     if (!vehicleId) return;
     const liveRef = ref(rtdb, `live/${vehicleId}`);
@@ -104,7 +102,6 @@ export default function LorryDetails() {
     return () => unsub();
   }, [vehicleId]);
 
-  // Presence
   useEffect(() => {
     if (!vehicleId) return;
     const pRef = ref(rtdb, `presence/vehicles/${vehicleId}`);
@@ -112,7 +109,6 @@ export default function LorryDetails() {
     return () => unsub();
   }, [vehicleId]);
 
-  // Recent messages: broadcast + this vehicle
   useEffect(() => {
     if (!vehicleId) return;
 
@@ -131,18 +127,24 @@ export default function LorryDetails() {
       limit(10)
     );
 
-    const map: Record<string, Msg> = {};
+    let allMsgs: Msg[] = [];
+    let vehicleMsgs: Msg[] = [];
+
+    const mergeAndSet = () => {
+      const map = new Map<string, Msg>();
+      [...allMsgs, ...vehicleMsgs].forEach((m) => map.set(m.id, m));
+      const merged = Array.from(map.values()).sort((a, b) => (b.createdAtMs ?? 0) - (a.createdAtMs ?? 0));
+      setMsgs(merged.slice(0, 12));
+    };
 
     const unsub1 = onSnapshot(qAll, (snap) => {
-      snap.docs.forEach((d) => (map[d.id] = { id: d.id, ...(d.data() as any) }));
-      const merged = Object.values(map).sort((a, b) => (b.createdAtMs ?? 0) - (a.createdAtMs ?? 0));
-      setMsgs(merged.slice(0, 12));
+      allMsgs = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      mergeAndSet();
     });
 
     const unsub2 = onSnapshot(qVehicle, (snap) => {
-      snap.docs.forEach((d) => (map[d.id] = { id: d.id, ...(d.data() as any) }));
-      const merged = Object.values(map).sort((a, b) => (b.createdAtMs ?? 0) - (a.createdAtMs ?? 0));
-      setMsgs(merged.slice(0, 12));
+      vehicleMsgs = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      mergeAndSet();
     });
 
     return () => {
@@ -152,7 +154,7 @@ export default function LorryDetails() {
   }, [vehicleId]);
 
   const openMaps = () => {
-    if (!pos) return;
+    if (!pos?.lat || !pos?.lng) return;
     Linking.openURL(`https://www.google.com/maps?q=${pos.lat},${pos.lng}`);
   };
 
@@ -203,27 +205,16 @@ export default function LorryDetails() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: THEME.bg }}>
-      {/* Top bar */}
-      <View
-        style={{
-          padding: P,
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 10,
-        }}
-      >
+      <View style={{ padding: P, flexDirection: "row", alignItems: "center", gap: 10 }}>
         <Pressable onPress={() => router.back()} style={{ padding: 8 }}>
           <Ionicons name="arrow-back" size={22} color={THEME.text} />
         </Pressable>
 
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: isTablet ? 20 : 18, fontWeight: "900", color: THEME.text }}>
-            Lorry Details
-          </Text>
+          <Text style={{ fontSize: isTablet ? 20 : 18, fontWeight: "900", color: THEME.text }}>Lorry Details</Text>
           <Text style={{ color: THEME.muted }}>{vehicleId}</Text>
         </View>
 
-        {/* Send message button */}
         <Pressable
           onPress={() => setMsgOpen(true)}
           style={{
@@ -250,8 +241,16 @@ export default function LorryDetails() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: P, paddingBottom: 28, gap: 12 }}>
-          {/* Vehicle card */}
-          <View style={{ backgroundColor: THEME.card, borderRadius: 18, borderWidth: 1, borderColor: THEME.border, padding: 14, gap: 6 }}>
+          <View
+            style={{
+              backgroundColor: THEME.card,
+              borderRadius: 18,
+              borderWidth: 1,
+              borderColor: THEME.border,
+              padding: 14,
+              gap: 6,
+            }}
+          >
             {vehicle ? (
               <>
                 <Text style={{ fontSize: 16, fontWeight: "900", color: THEME.text }}>
@@ -267,17 +266,32 @@ export default function LorryDetails() {
             )}
           </View>
 
-          {/* Status */}
-          <View style={{ backgroundColor: THEME.card, borderRadius: 18, borderWidth: 1, borderColor: THEME.border, padding: 14, gap: 6 }}>
+          <View
+            style={{
+              backgroundColor: THEME.card,
+              borderRadius: 18,
+              borderWidth: 1,
+              borderColor: THEME.border,
+              padding: 14,
+              gap: 6,
+            }}
+          >
             <Text style={{ fontWeight: "900", color: THEME.text }}>Status</Text>
             <Text style={{ color: THEME.muted }}>Online: {presence?.online ? "YES" : "NO"}</Text>
           </View>
 
-          {/* Mini Map */}
-          <MiniMap title={`Truck ${vehicleId}`} lat={pos?.lat} lng={pos?.lng} height={isTablet ? 280 : 230} />
+          <MiniMapOSM lat={pos?.lat} lng={pos?.lng} height={isTablet ? 280 : 230} />
 
-          {/* Live info */}
-          <View style={{ backgroundColor: THEME.card, borderRadius: 18, borderWidth: 1, borderColor: THEME.border, padding: 14, gap: 6 }}>
+          <View
+            style={{
+              backgroundColor: THEME.card,
+              borderRadius: 18,
+              borderWidth: 1,
+              borderColor: THEME.border,
+              padding: 14,
+              gap: 6,
+            }}
+          >
             <Text style={{ fontWeight: "900", color: THEME.text }}>Live</Text>
             <Text style={{ color: THEME.muted }}>Lat: {pos?.lat ?? "-"}</Text>
             <Text style={{ color: THEME.muted }}>Lng: {pos?.lng ?? "-"}</Text>
@@ -289,16 +303,14 @@ export default function LorryDetails() {
 
           <Pressable
             onPress={openMaps}
-            disabled={!pos}
+            disabled={!pos?.lat || !pos?.lng}
             style={{
-              backgroundColor: pos ? THEME.dark : "#94A3B8",
+              backgroundColor: pos?.lat && pos?.lng ? THEME.dark : "#94A3B8",
               padding: 14,
               borderRadius: 14,
             }}
           >
-            <Text style={{ color: "white", textAlign: "center", fontWeight: "900" }}>
-              Open in Google Maps
-            </Text>
+            <Text style={{ color: "white", textAlign: "center", fontWeight: "900" }}>Open in Google Maps</Text>
           </Pressable>
 
           <Pressable
@@ -309,20 +321,36 @@ export default function LorryDetails() {
               borderRadius: 14,
             }}
           >
-            <Text style={{ color: "white", textAlign: "center", fontWeight: "900" }}>
-              Remove Lorry (Firestore)
-            </Text>
+            <Text style={{ color: "white", textAlign: "center", fontWeight: "900" }}>Remove Lorry (Firestore)</Text>
           </Pressable>
 
-          {/* Recent Messages */}
-          <View style={{ backgroundColor: THEME.card, borderRadius: 18, borderWidth: 1, borderColor: THEME.border, padding: 14, gap: 10 }}>
+          <View
+            style={{
+              backgroundColor: THEME.card,
+              borderRadius: 18,
+              borderWidth: 1,
+              borderColor: THEME.border,
+              padding: 14,
+              gap: 10,
+            }}
+          >
             <Text style={{ fontWeight: "900", color: THEME.text }}>Recent Messages</Text>
 
             {msgs.length === 0 ? (
               <Text style={{ color: THEME.muted }}>No messages yet...</Text>
             ) : (
               msgs.map((m) => (
-                <View key={m.id} style={{ padding: 12, borderRadius: 14, backgroundColor: "#F8FAFC", borderWidth: 1, borderColor: THEME.border, gap: 4 }}>
+                <View
+                  key={m.id}
+                  style={{
+                    padding: 12,
+                    borderRadius: 14,
+                    backgroundColor: "#F8FAFC",
+                    borderWidth: 1,
+                    borderColor: THEME.border,
+                    gap: 4,
+                  }}
+                >
                   <Text style={{ fontWeight: "900", color: THEME.text }}>
                     {m.targetType === "all" ? "📢 Broadcast" : `🚚 ${vehicleId}`}
                     {m.title ? ` • ${m.title}` : ""}
@@ -339,15 +367,20 @@ export default function LorryDetails() {
         </ScrollView>
       )}
 
-      {/* Message modal */}
       <Modal visible={msgOpen} animationType="slide" transparent>
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}>
           <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ marginTop: "auto" }}>
-            <View style={{ backgroundColor: "white", borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: P, gap: 12 }}>
+            <View
+              style={{
+                backgroundColor: "white",
+                borderTopLeftRadius: 22,
+                borderTopRightRadius: 22,
+                padding: P,
+                gap: 12,
+              }}
+            >
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                <Text style={{ fontSize: 18, fontWeight: "900", color: THEME.text }}>
-                  Message → {vehicleId}
-                </Text>
+                <Text style={{ fontSize: 18, fontWeight: "900", color: THEME.text }}>Message → {vehicleId}</Text>
                 <Pressable onPress={() => setMsgOpen(false)}>
                   <Text style={{ fontWeight: "900", color: THEME.green }}>Close</Text>
                 </Pressable>

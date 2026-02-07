@@ -1,3 +1,4 @@
+// app/(tabs)/home.tsx
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   SafeAreaView,
@@ -34,8 +35,8 @@ const THEME = {
   text: "#0F172A",
   muted: "#64748B",
   border: "#E5E7EB",
-  green: "#166534", // tea green (deep)
-  green2: "#22C55E", // tea green (fresh)
+  green: "#166534",
+  green2: "#22C55E",
   greenSoft: "#DCFCE7",
   tealSoft: "#CCFBF1",
   redSoft: "#FEE2E2",
@@ -48,7 +49,6 @@ export default function HomeScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
 
-  // ✅ responsive helpers
   const isSmall = width < 360;
   const isTablet = width >= 768;
 
@@ -60,16 +60,15 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // RTDB states
   const [liveIds, setLiveIds] = useState<Record<string, boolean>>({});
   const [onlineIds, setOnlineIds] = useState<Record<string, boolean>>({});
   const [usersOnlineCount, setUsersOnlineCount] = useState<number | null>(null);
 
   const adminUid = auth.currentUser?.uid ?? null;
 
-  // ✅ Firestore realtime: vehicles
   useEffect(() => {
     setLoading(true);
+
     const unsub = onSnapshot(
       collection(db, "vehicles"),
       (snap) => {
@@ -83,22 +82,23 @@ export default function HomeScreen() {
         Alert.alert("Firestore Error", err.message);
       }
     );
+
     return () => unsub();
   }, []);
 
-  // ✅ RTDB: live locations
   useEffect(() => {
     const liveRef = ref(rtdb, "live");
     const unsub = onValue(liveRef, (snap) => {
       const data = snap.val() || {};
       const mapped: Record<string, boolean> = {};
-      Object.keys(data).forEach((k) => (mapped[k] = true));
+      Object.keys(data).forEach((k) => {
+        mapped[k] = true;
+      });
       setLiveIds(mapped);
     });
     return () => unsub();
   }, []);
 
-  // ✅ RTDB: presence vehicles
   useEffect(() => {
     const pRef = ref(rtdb, "presence/vehicles");
     const unsub = onValue(pRef, (snap) => {
@@ -112,23 +112,19 @@ export default function HomeScreen() {
     return () => unsub();
   }, []);
 
-  // ✅ Optional: presence users count (optional node)
   useEffect(() => {
     const uRef = ref(rtdb, "presence/users");
     const unsub = onValue(
       uRef,
       (snap) => {
         const data = snap.val() || {};
-        const ids = Object.keys(data);
         let count = 0;
-        ids.forEach((k) => {
+        Object.keys(data).forEach((k) => {
           if (data[k]?.online) count += 1;
         });
         setUsersOnlineCount(count);
       },
-      () => {
-        setUsersOnlineCount(null);
-      }
+      () => setUsersOnlineCount(null)
     );
     return () => unsub();
   }, []);
@@ -136,16 +132,13 @@ export default function HomeScreen() {
   const stats = useMemo(() => {
     const total = vehicles.length;
     const liveCount = Object.keys(liveIds).length;
-
     let onlineCount = 0;
     Object.keys(onlineIds).forEach((k) => {
       if (onlineIds[k]) onlineCount += 1;
     });
-
     return { total, liveCount, onlineCount };
   }, [vehicles, liveIds, onlineIds]);
 
-  // ✅ show top lorries for "Live Now"
   const liveNow = useMemo(() => {
     const withStatus = vehicles.map((v) => ({
       ...v,
@@ -153,13 +146,13 @@ export default function HomeScreen() {
       isOnline: !!onlineIds[v.id],
     }));
 
-    const sorted = withStatus.sort((a, b) => {
+    withStatus.sort((a, b) => {
       if (a.isLive !== b.isLive) return a.isLive ? -1 : 1;
       if (a.isOnline !== b.isOnline) return a.isOnline ? -1 : 1;
       return (b.createdAt ?? 0) - (a.createdAt ?? 0);
     });
 
-    return sorted.slice(0, 6);
+    return withStatus.slice(0, 6);
   }, [vehicles, liveIds, onlineIds]);
 
   const onRefresh = useCallback(async () => {
@@ -168,13 +161,8 @@ export default function HomeScreen() {
   }, []);
 
   const goLorries = () => router.push("/(tabs)/lorries");
-  const goDetails = (id: string) =>
-    router.push({ pathname: "/(tabs)/lorry/[id]", params: { id } });
-
-  // ✅ Broadcast button -> open broadcast modal in Lorries screen
-  const goBroadcast = () => {
-    router.push({ pathname: "/(tabs)/lorries", params: { broadcast: "1" } });
-  };
+  const goDetails = (id: string) => router.push({ pathname: "/(tabs)/lorry/[id]", params: { id } });
+  const goBroadcast = () => router.push({ pathname: "/(tabs)/lorries", params: { broadcast: "1" } });
 
   const badge = (isLive: boolean, isOnline: boolean) => {
     const bg = isLive ? THEME.greenSoft : isOnline ? THEME.tealSoft : THEME.redSoft;
@@ -219,12 +207,9 @@ export default function HomeScreen() {
         >
           <Ionicons name={icon} size={20} color={THEME.text} />
         </View>
-
         <View style={{ flex: 1 }}>
           <Text style={{ color: THEME.muted, fontWeight: "700" }}>{title}</Text>
-          <Text style={{ color: THEME.text, fontWeight: "900", fontSize: isTablet ? 22 : 20 }}>
-            {value}
-          </Text>
+          <Text style={{ color: THEME.text, fontWeight: "900", fontSize: isTablet ? 22 : 20 }}>{value}</Text>
         </View>
       </View>
     </View>
@@ -235,9 +220,7 @@ export default function HomeScreen() {
       <SafeAreaView style={{ flex: 1, backgroundColor: THEME.bg }}>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: P }}>
           <Text style={{ fontWeight: "900", fontSize: 16, color: THEME.text }}>Not logged in</Text>
-          <Text style={{ color: THEME.muted, marginTop: 8, textAlign: "center" }}>
-            Please login first.
-          </Text>
+          <Text style={{ color: THEME.muted, marginTop: 8, textAlign: "center" }}>Please login first.</Text>
         </View>
       </SafeAreaView>
     );
@@ -250,7 +233,6 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
         <View
           style={{
             backgroundColor: THEME.card,
@@ -266,9 +248,7 @@ export default function HomeScreen() {
               <Text style={{ fontSize: isTablet ? 22 : 20, fontWeight: "900", color: THEME.text }}>
                 Admin Dashboard
               </Text>
-              <Text style={{ color: THEME.muted, marginTop: 4 }}>
-                Tea Leaf System • Live Tracking & Messaging
-              </Text>
+              <Text style={{ color: THEME.muted, marginTop: 4 }}>Tea Leaf System • Live Tracking & Messaging</Text>
             </View>
 
             <Pressable
@@ -286,7 +266,6 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          {/* Quick actions */}
           <View style={{ flexDirection: "row", marginTop: 12 }}>
             <Pressable
               onPress={goLorries}
@@ -317,7 +296,6 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          {/* ✅ Broadcast link (REAL) */}
           <Pressable
             onPress={goBroadcast}
             style={{
@@ -334,13 +312,10 @@ export default function HomeScreen() {
             }}
           >
             <Ionicons name="megaphone-outline" size={18} color={THEME.green} />
-            <Text style={{ color: THEME.green, fontWeight: "900" }}>
-              Send Broadcast Message
-            </Text>
+            <Text style={{ color: THEME.green, fontWeight: "900" }}>Send Broadcast Message</Text>
           </Pressable>
         </View>
 
-        {/* Stats */}
         {loading ? (
           <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 24 }}>
             <ActivityIndicator />
@@ -362,7 +337,6 @@ export default function HomeScreen() {
           </>
         )}
 
-        {/* Live Now */}
         <View
           style={{
             backgroundColor: THEME.card,
@@ -375,12 +349,8 @@ export default function HomeScreen() {
         >
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
             <Ionicons name="flash" size={18} color={THEME.green} />
-            <Text style={{ marginLeft: 8, fontSize: 16, fontWeight: "900", color: THEME.text }}>
-              Live Now
-            </Text>
-
+            <Text style={{ marginLeft: 8, fontSize: 16, fontWeight: "900", color: THEME.text }}>Live Now</Text>
             <View style={{ flex: 1 }} />
-
             <Pressable onPress={goLorries} style={{ padding: 6 }}>
               <Text style={{ color: THEME.green, fontWeight: "900" }}>View all</Text>
             </Pressable>
@@ -430,9 +400,7 @@ export default function HomeScreen() {
 
                   <View style={{ flexDirection: "row", alignItems: "center", marginTop: 10 }}>
                     <Ionicons name="chevron-forward" size={18} color={THEME.green} />
-                    <Text style={{ color: THEME.green, fontWeight: "900", marginLeft: 6 }}>
-                      Open details
-                    </Text>
+                    <Text style={{ color: THEME.green, fontWeight: "900", marginLeft: 6 }}>Open details</Text>
                   </View>
                 </Pressable>
               );
@@ -444,7 +412,6 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* Footer space */}
         <View style={{ height: Platform.OS === "ios" ? 6 : 12 }} />
       </ScrollView>
     </SafeAreaView>
