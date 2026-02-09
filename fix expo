@@ -45,3 +45,6 @@ eas build -p android --profile preview
 git add .
 git commit -m "Add full source code for admin, driver, owners apps"
 git push
+
+for find errors build app :     adb logcat | findstr -i "ReactNative AndroidRuntime Expo"
+
